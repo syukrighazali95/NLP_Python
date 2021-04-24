@@ -1,6 +1,8 @@
+# https://realpython.com/sentiment-analysis-python/
 import os
 import random
 import spacy
+from spacy.util import minibatch, compounding
 
 def load_training_data(data_directory: str = "datasets/aclImdb/train", split: float = 0.8, limit: int = 0) -> tuple:
     reviews = []
@@ -29,7 +31,7 @@ def load_training_data(data_directory: str = "datasets/aclImdb/train", split: fl
     return reviews[:split], reviews[split:]
 
 def train_model(training_data: list, test_data: list, iterations: int = 20) -> None:
-    nlp = spacy_load("en_core_web_sm")
+    nlp = spacy.load("en_core_web_sm")
     if "textcat" not in nlp.pipe_names:
         textcat = nlp.create_pipe(
             "textcat", config={"architecture": "simple_cnn"}
@@ -38,7 +40,16 @@ def train_model(training_data: list, test_data: list, iterations: int = 20) -> N
     else:
         textcat = nlp.get_pipe("textcat")
     
+    print(textcat)
     textcat.add_label("pos")
     textcat.add_label("neg")
 
-print(load_training_data())
+    training_excluded_pipes = [
+        pipe for pipe in nlp.pipe_names if pipe != "textcat"
+    ]
+    # print(training_excluded_pipes)
+
+
+
+train, test = load_training_data(limit = 2500)
+train_model(train, test)
