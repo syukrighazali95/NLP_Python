@@ -1,7 +1,8 @@
 import os
 import random
+import spacy
 
-def load_training_data(data_directory: str = "datasets/aclImdb/train", split: float = 0.8, limit: int = 0):
+def load_training_data(data_directory: str = "datasets/aclImdb/train", split: float = 0.8, limit: int = 0) -> tuple:
     reviews = []
     for label in ["pos", "neg"]:
         labeled_directory = f"{data_directory}/{label}"
@@ -9,7 +10,7 @@ def load_training_data(data_directory: str = "datasets/aclImdb/train", split: fl
         for review in os.listdir(labeled_directory):
             # print(review)
             if review.endswith(".txt"):
-                with open(f"{labeled_directory}/{review}") as f:
+                with open(f"{labeled_directory}/{review}", encoding="utf8") as f:
                     text = f.read()
                     text = text.replace("<br />", "\n\n")
                     if text.strip():
@@ -20,5 +21,24 @@ def load_training_data(data_directory: str = "datasets/aclImdb/train", split: fl
                             }
                         }
                         reviews.append((text, spacy_label))
+    random.shuffle(reviews)
 
-load_training_data()
+    if limit:
+        reviews = reviews[:limit]
+    split = int(len(reviews) * split)
+    return reviews[:split], reviews[split:]
+
+def train_model(training_data: list, test_data: list, iterations: int = 20) -> None:
+    nlp = spacy_load("en_core_web_sm")
+    if "textcat" not in nlp.pipe_names:
+        textcat = nlp.create_pipe(
+            "textcat", config={"architecture": "simple_cnn"}
+        )
+        nlp.add_pipe(textcat, last=True)
+    else:
+        textcat = nlp.get_pipe("textcat")
+    
+    textcat.add_label("pos")
+    textcat.add_label("neg")
+
+print(load_training_data())
